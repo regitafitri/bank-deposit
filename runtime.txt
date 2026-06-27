@@ -1,6 +1,1 @@
-pandas
-numpy
-matplotlib
-seaborn
-scikit-learn
-jupyter
+python-3.12
