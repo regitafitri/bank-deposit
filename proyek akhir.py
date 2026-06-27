@@ -13,25 +13,22 @@ st.set_page_config(
     layout='wide'
 )
 
-# ── Warna per tab ─────────────────────────────────────────────
+# ── Tema Biru & Pink ──────────────────────────────────────────
 st.markdown("""
 <style>
-/* Font global */
 html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
 
-/* Sidebar */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: linear-gradient(180deg, #1a1a4e 0%, #2d1b69 50%, #8b1a6b 100%);
     color: white;
 }
 [data-testid="stSidebar"] * { color: white !important; }
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stNumberInput label,
-[data-testid="stSidebar"] .stSlider label { color: #a8d8ea !important; }
+[data-testid="stSidebar"] .stSlider label { color: #f8bbd0 !important; }
 
-/* Tombol predict */
 [data-testid="stSidebar"] .stButton > button {
-    background: linear-gradient(90deg, #e94560, #0f3460);
+    background: linear-gradient(90deg, #e91e8c, #1565c0);
     color: white !important;
     border: none;
     border-radius: 8px;
@@ -40,18 +37,9 @@ html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     padding: 10px;
 }
 
-/* Metric cards */
-[data-testid="stMetric"] {
-    background: #f8f9fa;
-    border-radius: 10px;
-    padding: 12px;
-    border-left: 5px solid #0f3460;
-}
-
-/* Tab styling */
 .stTabs [data-baseweb="tab-list"] {
     gap: 6px;
-    background: #f0f2f6;
+    background: #fce4ec;
     border-radius: 12px;
     padding: 6px;
 }
@@ -60,14 +48,12 @@ html, body, [class*="css"] { font-family: 'Segoe UI', sans-serif; }
     padding: 8px 20px;
     font-weight: 600;
     font-size: 14px;
+    color: #880e4f;
 }
-
-/* Warna aktif tiap tab */
-.stTabs [aria-selected="true"]:nth-child(1) { background: #1a73e8 !important; color: white !important; }
-.stTabs [aria-selected="true"]:nth-child(2) { background: #34a853 !important; color: white !important; }
-.stTabs [aria-selected="true"]:nth-child(3) { background: #fa7b17 !important; color: white !important; }
-.stTabs [aria-selected="true"]:nth-child(4) { background: #9c27b0 !important; color: white !important; }
-.stTabs [aria-selected="true"]:nth-child(5) { background: #e53935 !important; color: white !important; }
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(90deg, #1565c0, #e91e8c) !important;
+    color: white !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,7 +73,7 @@ def load_data():
 
 df = load_data()
 
-# ── Kolom fitur (51 hasil OHE) ────────────────────────────────
+# ── Kolom fitur ───────────────────────────────────────────────
 FEATURE_COLS = [
     'num__age','num__balance','num__day','num__duration','num__campaign',
     'num__pdays','num__previous',
@@ -135,11 +121,10 @@ def build_input(age, balance, day, duration, campaign, pdays, previous,
 if 'history' not in st.session_state:
     st.session_state.history = []
 
-# ── Sidebar Input ─────────────────────────────────────────────
+# ── Sidebar ───────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("## 🏦 Bank Deposit Prediction")
     st.markdown("---")
-
     st.markdown("### 👤 Customer Information")
     with st.expander("▼ Customer Profile", expanded=True):
         age       = st.number_input("Age", 18, 95, 40)
@@ -153,9 +138,9 @@ with st.sidebar:
 
     st.markdown("### 💰 Financial Information")
     with st.expander("▼ Financial Profile", expanded=True):
-        balance  = st.number_input("Account Balance (€)", -10000, 100000, 1000)
-        housing  = st.selectbox("Housing Loan", ['no','yes'])
-        loan     = st.selectbox("Personal Loan", ['no','yes'])
+        balance = st.number_input("Account Balance (€)", -10000, 100000, 1000)
+        housing = st.selectbox("Housing Loan", ['no','yes'])
+        loan    = st.selectbox("Personal Loan", ['no','yes'])
 
     st.markdown("### 📞 Campaign Information")
     with st.expander("▼ Campaign Details", expanded=True):
@@ -172,36 +157,54 @@ with st.sidebar:
 
     predict_btn = st.button("🔍 Predict", use_container_width=True)
 
-# ── Hitung prediksi ───────────────────────────────────────────
+# ── Prediksi ──────────────────────────────────────────────────
 if predict_btn:
     X_input = build_input(age, balance, day, duration, campaign, pdays, previous,
                           job, marital, education, default_, housing, loan,
                           contact, month, poutcome)
     proba = model.predict_proba(X_input)[0][1]
     score = int(proba * 100)
-    if proba >= 0.7:
-        category = "Very Likely"
-    elif proba >= 0.4:
-        category = "Likely"
-    elif proba >= 0.2:
-        category = "Unlikely"
-    else:
-        category = "Very Unlikely"
-
+    category = ("Very Likely" if proba >= 0.7 else
+                "Likely"      if proba >= 0.4 else
+                "Unlikely"    if proba >= 0.2 else "Very Unlikely")
     st.session_state.history.append({
         'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'Age': age, 'Job': job, 'Probability': f"{proba:.1%}",
-        'Score': score, 'Category': category
+        'Age': age, 'Job': job,
+        'Probability': f"{proba:.1%}", 'Score': score, 'Category': category
     })
-    st.session_state.last_pred = {
-        'proba': proba, 'score': score, 'category': category,
-        'age': age, 'job': job, 'marital': marital,
-        'education': education, 'default': default_,
-        'balance': balance, 'housing': housing, 'loan': loan,
-        'contact': contact, 'day': day, 'month': month,
-        'duration': duration, 'campaign': campaign,
-        'pdays': pdays, 'previous': previous, 'poutcome': poutcome
-    }
+    st.session_state.last_pred = dict(
+        proba=proba, score=score, category=category,
+        age=age, job=job, marital=marital, education=education,
+        default=default_, balance=balance, housing=housing, loan=loan,
+        contact=contact, day=day, month=month, duration=duration,
+        campaign=campaign, pdays=pdays, previous=previous, poutcome=poutcome
+    )
+
+# ── Helper: metric card ───────────────────────────────────────
+def metric_card(label, val, color):
+    st.markdown(f"""
+    <div style='background:white; border-left:6px solid {color};
+    border-radius:10px; padding:16px; text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:8px;'>
+    <p style='color:{color}; font-size:13px; margin:0; font-weight:600;'>{label}</p>
+    <h2 style='color:#1a1a2e; margin:4px 0 0; font-size:26px;'>{val}</h2>
+    </div>""", unsafe_allow_html=True)
+
+def header_banner(title, subtitle, grad_left, grad_right):
+    st.markdown(f"""
+    <div style='background:linear-gradient(90deg,{grad_left},{grad_right});
+    padding:20px 28px; border-radius:14px; margin-bottom:20px;'>
+    <h1 style='color:white; margin:0;'>{title}</h1>
+    <p style='color:rgba(255,255,255,0.85); margin:6px 0 0;'>{subtitle}</p>
+    </div>""", unsafe_allow_html=True)
+
+# Palet warna biru-pink untuk chart
+BLUE  = '#1565c0'
+PINK  = '#e91e8c'
+LBLUE = '#42a5f5'
+LPINK = '#f48fb1'
+DBLUE = '#0d47a1'
+DPINK = '#880e4f'
 
 # ── TABS ──────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -209,36 +212,21 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🧠 Explainability", "📜 History"
 ])
 
-# ════════════════════════════════════════════════════════
-# TAB 1: OVERVIEW — Biru
-# ════════════════════════════════════════════════════════
+# ════ TAB 1: OVERVIEW ════════════════════════════════════════
 with tab1:
-    st.markdown("""
-    <div style='background: linear-gradient(90deg,#1a73e8,#4fc3f7);
-    padding:20px 28px; border-radius:14px; margin-bottom:20px;'>
-    <h1 style='color:white; margin:0;'>🏦 Bank Deposit Prediction Dashboard</h1>
-    <p style='color:#e3f2fd; margin:6px 0 0;'>
-    Predict whether a customer will subscribe to a term deposit using XGBoost.</p>
-    </div>""", unsafe_allow_html=True)
+    header_banner("🏦 Bank Deposit Prediction Dashboard",
+                  "Predict whether a customer will subscribe to a term deposit using XGBoost.",
+                  BLUE, PINK)
 
-    subscribe_yes = int((df['deposit'] == 'yes').sum()) if 'deposit' in df.columns else 5289
-    subscribe_no  = int((df['deposit'] == 'no').sum())  if 'deposit' in df.columns else 5873
+    subscribe_yes = int((df['deposit']=='yes').sum()) if 'deposit' in df.columns else 5289
+    subscribe_no  = int((df['deposit']=='no').sum())  if 'deposit' in df.columns else 5873
 
     st.markdown("### 📋 Dataset Overview")
-    c1, c2, c3, c4 = st.columns(4)
-    for col, label, val, color in zip(
-        [c1, c2, c3, c4],
-        ["👥 Customers", "🔢 Features", "✅ Subscribe Yes", "❌ Subscribe No"],
-        [f"{len(df):,}", "16", f"{subscribe_yes:,}", f"{subscribe_no:,}"],
-        ["#1a73e8", "#0288d1", "#34a853", "#e53935"]
-    ):
-        col.markdown(f"""
-        <div style='background:white; border-left:6px solid {color};
-        border-radius:10px; padding:16px; text-align:center;
-        box-shadow:0 2px 8px rgba(0,0,0,0.08);'>
-        <p style='color:{color}; font-size:13px; margin:0; font-weight:600;'>{label}</p>
-        <h2 style='color:#1a1a2e; margin:4px 0 0; font-size:28px;'>{val}</h2>
-        </div>""", unsafe_allow_html=True)
+    c1,c2,c3,c4 = st.columns(4)
+    with c1: metric_card("👥 Customers",   f"{len(df):,}", BLUE)
+    with c2: metric_card("🔢 Features",    "16",           PINK)
+    with c3: metric_card("✅ Subscribe Yes",f"{subscribe_yes:,}", LBLUE)
+    with c4: metric_card("❌ Subscribe No", f"{subscribe_no:,}",  LPINK)
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### ⚙️ Pipeline Overview")
@@ -252,219 +240,194 @@ with tab1:
     st.markdown("### 📄 Sample Data")
     st.dataframe(df.head(10), use_container_width=True)
 
-# ════════════════════════════════════════════════════════
-# TAB 2: PREDICTION — Hijau
-# ════════════════════════════════════════════════════════
+# ════ TAB 2: PREDICTION ══════════════════════════════════════
 with tab2:
-    st.markdown("""
-    <div style='background: linear-gradient(90deg,#34a853,#81c995);
-    padding:20px 28px; border-radius:14px; margin-bottom:20px;'>
-    <h1 style='color:white; margin:0;'>🔍 Prediction</h1>
-    <p style='color:#e8f5e9; margin:6px 0 0;'>
-    Input data nasabah di sidebar, lalu klik <b>Predict</b>.</p>
-    </div>""", unsafe_allow_html=True)
+    header_banner("🔍 Prediction",
+                  "Input data nasabah di sidebar, lalu klik <b>Predict</b>.",
+                  PINK, BLUE)
 
     if 'last_pred' in st.session_state:
         p = st.session_state.last_pred
-        proba_val = p['proba']
-        score_val = p['score']
-        cat_val   = p['category']
+        cat_color = {
+            "Very Likely": BLUE, "Likely": LBLUE,
+            "Unlikely": LPINK,   "Very Unlikely": PINK
+        }.get(p['category'], BLUE)
 
-        color_map = {
-            "Very Likely": "#34a853", "Likely": "#1a73e8",
-            "Unlikely": "#fa7b17",    "Very Unlikely": "#e53935"
-        }
-        card_color = color_map.get(cat_val, "#1a73e8")
-
-        col1, col2, col3 = st.columns(3)
-        for col, label, val in zip(
-            [col1, col2, col3],
-            ["📊 Probability", "🏆 Score", "🏷️ Category"],
-            [f"{proba_val:.1%}", f"{score_val}/100", cat_val]
-        ):
-            col.markdown(f"""
-            <div style='background:white; border-left:6px solid {card_color};
-            border-radius:10px; padding:16px; text-align:center;
-            box-shadow:0 2px 8px rgba(0,0,0,0.08);'>
-            <p style='color:{card_color}; font-size:13px; margin:0; font-weight:600;'>{label}</p>
-            <h2 style='color:#1a1a2e; margin:4px 0 0; font-size:26px;'>{val}</h2>
-            </div>""", unsafe_allow_html=True)
+        c1,c2,c3 = st.columns(3)
+        with c1: metric_card("📊 Probability", f"{p['proba']:.1%}", PINK)
+        with c2: metric_card("🏆 Score",        f"{p['score']}/100", BLUE)
+        with c3: metric_card("🏷️ Category",     p['category'],       cat_color)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.progress(proba_val)
+        st.markdown(f"""
+        <div style='background:linear-gradient(90deg,{BLUE}22,{PINK}22);
+        border-radius:10px; padding:4px 10px;'>
+        </div>""", unsafe_allow_html=True)
+        st.progress(p['proba'])
 
         st.markdown("---")
         st.markdown("### 💡 Recommendation")
-        rec_map = {
-            "Very Likely": ("✅", "#34a853", "High potential customer. Prioritize immediate follow-up."),
-            "Likely":      ("📞", "#1a73e8", "Potential customer. Additional follow-up suggested."),
-            "Unlikely":    ("⚠️", "#fa7b17", "Low potential. Consider alternative products."),
-            "Very Unlikely":("❌","#e53935", "Very low potential. Deprioritize for deposit campaign.")
-        }
-        icon, rcolor, msg = rec_map[cat_val]
+        rec = {
+            "Very Likely":  (BLUE, "✅ High potential customer. Prioritize immediate follow-up."),
+            "Likely":       (LBLUE,"📞 Potential customer. Additional follow-up suggested."),
+            "Unlikely":     (LPINK,"⚠️ Low potential. Consider alternative products."),
+            "Very Unlikely":(PINK, "❌ Very low potential. Deprioritize for deposit campaign.")
+        }[p['category']]
         st.markdown(f"""
-        <div style='background:{rcolor}18; border-left:5px solid {rcolor};
+        <div style='background:{rec[0]}18; border-left:5px solid {rec[0]};
         border-radius:8px; padding:14px 18px;'>
-        <b style='color:{rcolor};'>{icon} {msg}</b>
-        </div>""", unsafe_allow_html=True)
+        <b style='color:{rec[0]};'>{rec[1]}</b></div>""", unsafe_allow_html=True)
 
         st.markdown("---")
         st.markdown("### 👤 Customer Input Summary")
-        summary = pd.DataFrame([{
-            'age': p['age'], 'job': p['job'], 'marital': p['marital'],
-            'education': p['education'], 'default': p['default'],
-            'balance': p['balance'], 'housing': p['housing'], 'loan': p['loan'],
-            'contact': p['contact'], 'day': p['day'], 'month': p['month'],
-            'duration': p['duration'], 'campaign': p['campaign'],
-            'pdays': p['pdays'], 'previous': p['previous'], 'poutcome': p['poutcome']
-        }])
-        st.dataframe(summary, use_container_width=True)
+        st.dataframe(pd.DataFrame([{
+            'age':p['age'],'job':p['job'],'marital':p['marital'],
+            'education':p['education'],'default':p['default'],
+            'balance':p['balance'],'housing':p['housing'],'loan':p['loan'],
+            'contact':p['contact'],'day':p['day'],'month':p['month'],
+            'duration':p['duration'],'campaign':p['campaign'],
+            'pdays':p['pdays'],'previous':p['previous'],'poutcome':p['poutcome']
+        }]), use_container_width=True)
     else:
-        st.markdown("""
-        <div style='background:#e8f5e9; border-left:5px solid #34a853;
+        st.markdown(f"""
+        <div style='background:{BLUE}11; border-left:5px solid {BLUE};
         border-radius:8px; padding:14px 18px;'>
         👈 <b>Silakan isi data nasabah di sidebar dan klik Predict.</b>
         </div>""", unsafe_allow_html=True)
 
-# ════════════════════════════════════════════════════════
-# TAB 3: ANALYTICS — Orange
-# ════════════════════════════════════════════════════════
+# ════ TAB 3: ANALYTICS ═══════════════════════════════════════
 with tab3:
-    st.markdown("""
-    <div style='background: linear-gradient(90deg,#fa7b17,#ffb74d);
-    padding:20px 28px; border-radius:14px; margin-bottom:20px;'>
-    <h1 style='color:white; margin:0;'>📊 Analytics Dashboard</h1>
-    <p style='color:#fff3e0; margin:6px 0 0;'>
-    Distribusi dan analisis demografi nasabah.</p>
-    </div>""", unsafe_allow_html=True)
+    header_banner("📊 Analytics Dashboard",
+                  "Distribusi dan analisis demografi nasabah.",
+                  DPINK, LBLUE)
 
-    PALETTE = ['#1a73e8','#fa7b17','#34a853','#e53935','#9c27b0','#00bcd4']
+    def bp_chart(ax, data, title, colors=[BLUE, PINK]):
+        data.plot(kind='bar', ax=ax, color=colors)
+        ax.set_xlabel(""); ax.set_title(title, fontweight='bold')
+        ax.tick_params(axis='x', rotation=45)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(['No Loan','Loan'], fontsize=8)
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
+    c1,c2,c3 = st.columns(3)
+    with c1:
         st.markdown("**Job Distribution**")
         if 'job' in df.columns and 'loan' in df.columns:
-            job_counts = df.groupby(['job','loan']).size().unstack(fill_value=0)
-            fig, ax = plt.subplots(figsize=(5,4))
-            job_counts.plot(kind='bar', ax=ax, color=['#1a73e8','#fa7b17'])
-            ax.set_xlabel(""); ax.tick_params(axis='x', rotation=45)
-            ax.legend(['No Loan','Loan'], fontsize=8)
-            ax.set_title("Job vs Loan"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            bp_chart(ax, df.groupby(['job','loan']).size().unstack(fill_value=0),
+                     "Job vs Loan")
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    with col2:
+    with c2:
         st.markdown("**Marital Distribution**")
         if 'marital' in df.columns and 'loan' in df.columns:
-            mar_counts = df.groupby(['marital','loan']).size().unstack(fill_value=0)
-            fig, ax = plt.subplots(figsize=(5,4))
-            mar_counts.plot(kind='bar', ax=ax, color=['#34a853','#e53935'])
-            ax.set_xlabel(""); ax.tick_params(axis='x', rotation=0)
-            ax.legend(['No Loan','Loan'], fontsize=8)
-            ax.set_title("Marital vs Loan"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            bp_chart(ax, df.groupby(['marital','loan']).size().unstack(fill_value=0),
+                     "Marital vs Loan", [LBLUE, LPINK])
+            ax.tick_params(axis='x', rotation=0)
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    with col3:
+    with c3:
         st.markdown("**Contact Type**")
         if 'contact' in df.columns:
-            contact_counts = df['contact'].value_counts()
-            fig, ax = plt.subplots(figsize=(5,4))
-            ax.pie(contact_counts, labels=contact_counts.index,
-                   autopct='%1.1f%%', colors=['#1a73e8','#fa7b17','#34a853'],
-                   startangle=90, wedgeprops={'edgecolor':'white','linewidth':2})
-            ax.set_title("Contact Type Distribution"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            cc = df['contact'].value_counts()
+            ax.pie(cc, labels=cc.index, autopct='%1.1f%%',
+                   colors=[BLUE, PINK, LBLUE], startangle=90,
+                   wedgeprops={'edgecolor':'white','linewidth':2})
+            ax.set_title("Contact Type", fontweight='bold')
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    col4, col5, col6 = st.columns(3)
-    with col4:
+    c4,c5,c6 = st.columns(3)
+    with c4:
         st.markdown("**Balance Distribution**")
         if 'balance' in df.columns:
-            fig, ax = plt.subplots(figsize=(5,4))
-            df['balance'].clip(-2000, 10000).hist(bins=40, ax=ax,
-                color='#9c27b0', edgecolor='white', alpha=0.85)
-            ax.set_xlabel("Balance (€)"); ax.set_ylabel("Count")
-            ax.set_title("Account Balance Distribution"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            n, bins, patches = ax.hist(df['balance'].clip(-2000,10000),
+                                       bins=40, edgecolor='white')
+            for i, patch in enumerate(patches):
+                patch.set_facecolor(plt.cm.cool(i / len(patches)))
+            ax.set_xlabel("Balance (€)"); ax.set_title("Balance Distribution", fontweight='bold')
+            ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    with col5:
+    with c5:
         st.markdown("**Contact Month Trend**")
         if 'month' in df.columns:
             month_order = ['jan','feb','mar','apr','may','jun',
                            'jul','aug','sep','oct','nov','dec']
-            month_counts = df['month'].value_counts().reindex(month_order, fill_value=0)
-            fig, ax = plt.subplots(figsize=(5,4))
-            ax.fill_between(range(len(month_counts)), month_counts.values,
-                            alpha=0.3, color='#fa7b17')
-            ax.plot(range(len(month_counts)), month_counts.values,
-                    marker='o', color='#fa7b17', linewidth=2)
-            ax.set_xticks(range(len(month_counts)))
-            ax.set_xticklabels(month_order, rotation=45, fontsize=8)
-            ax.set_ylabel("Count"); ax.set_title("Contact per Month")
+            mc = df['month'].value_counts().reindex(month_order, fill_value=0)
+            fig,ax = plt.subplots(figsize=(5,4))
+            ax.fill_between(range(len(mc)), mc.values, alpha=0.25, color=PINK)
+            ax.plot(range(len(mc)), mc.values, marker='o', color=BLUE,
+                    linewidth=2, markerfacecolor=PINK, markeredgecolor=BLUE, markersize=7)
+            ax.set_xticks(range(len(mc))); ax.set_xticklabels(month_order, rotation=45, fontsize=8)
+            ax.set_title("Contact per Month", fontweight='bold')
+            ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
             plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    with col6:
+    with c6:
         st.markdown("**Education Distribution**")
         if 'education' in df.columns and 'loan' in df.columns:
-            edu_counts = df.groupby(['education','loan']).size().unstack(fill_value=0)
-            fig, ax = plt.subplots(figsize=(5,4))
-            edu_counts.plot(kind='bar', ax=ax, color=['#00bcd4','#e53935'])
-            ax.set_xlabel(""); ax.tick_params(axis='x', rotation=0)
-            ax.legend(['No Loan','Loan'], fontsize=8)
-            ax.set_title("Education vs Loan"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            bp_chart(ax, df.groupby(['education','loan']).size().unstack(fill_value=0),
+                     "Education vs Loan", [DBLUE, LPINK])
+            ax.tick_params(axis='x', rotation=0)
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    col7, col8 = st.columns(2)
-    with col7:
+    c7,c8 = st.columns(2)
+    with c7:
         st.markdown("**Previous Campaign Outcome**")
         if 'poutcome' in df.columns and 'loan' in df.columns:
-            po_counts = df.groupby(['poutcome','loan']).size().unstack(fill_value=0)
-            fig, ax = plt.subplots(figsize=(5,4))
-            po_counts.plot(kind='bar', ax=ax, color=['#9c27b0','#fa7b17'])
-            ax.set_xlabel(""); ax.tick_params(axis='x', rotation=0)
-            ax.legend(['No Loan','Loan'], fontsize=8)
-            ax.set_title("Poutcome vs Loan"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            bp_chart(ax, df.groupby(['poutcome','loan']).size().unstack(fill_value=0),
+                     "Poutcome vs Loan", [BLUE, PINK])
+            ax.tick_params(axis='x', rotation=0)
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-    with col8:
+    with c8:
         st.markdown("**Deposit Distribution**")
         if 'deposit' in df.columns and 'loan' in df.columns:
-            dep_counts = df.groupby(['deposit','loan']).size().unstack(fill_value=0)
-            fig, ax = plt.subplots(figsize=(5,4))
-            dep_counts.plot(kind='bar', ax=ax, color=['#34a853','#e53935'])
-            ax.set_xlabel(""); ax.tick_params(axis='x', rotation=0)
-            ax.legend(['No Loan','Loan'], fontsize=8)
-            ax.set_title("Deposit vs Loan"); plt.tight_layout()
-            st.pyplot(fig); plt.close()
+            fig,ax = plt.subplots(figsize=(5,4))
+            bp_chart(ax, df.groupby(['deposit','loan']).size().unstack(fill_value=0),
+                     "Deposit vs Loan", [LBLUE, LPINK])
+            ax.tick_params(axis='x', rotation=0)
+            plt.tight_layout(); st.pyplot(fig); plt.close()
 
-# ════════════════════════════════════════════════════════
-# TAB 4: EXPLAINABILITY — Ungu
-# ════════════════════════════════════════════════════════
+# ════ TAB 4: EXPLAINABILITY ══════════════════════════════════
 with tab4:
-    st.markdown("""
-    <div style='background: linear-gradient(90deg,#9c27b0,#ce93d8);
-    padding:20px 28px; border-radius:14px; margin-bottom:20px;'>
-    <h1 style='color:white; margin:0;'>🧠 Explainability Dashboard</h1>
-    <p style='color:#f3e5f5; margin:6px 0 0;'>
-    Feature importance dari model XGBoost.</p>
-    </div>""", unsafe_allow_html=True)
+    header_banner("🧠 Explainability Dashboard",
+                  "Feature importance dari model XGBoost.",
+                  DBLUE, DPINK)
 
     importance = model.feature_importances_
     feat_df = pd.DataFrame({
         'Feature': FEATURE_COLS, 'Importance': importance
     }).sort_values('Importance', ascending=False).head(15)
 
-    purple_palette = plt.cm.Purples(np.linspace(0.4, 0.9, len(feat_df)))
+    # Gradient biru → pink untuk bar chart
+    n = len(feat_df)
+    bar_colors = [
+        (
+            int(21  + (233-21)  * i/(n-1)),  # R: biru(21) → pink(233)
+            int(101 + (30-101)  * i/(n-1)),  # G: biru(101)→ pink(30)
+            int(192 + (140-192) * i/(n-1))   # B: biru(192)→ pink(140)
+        )
+        for i in range(n)
+    ]
+    bar_colors_hex = [f'#{r:02x}{g:02x}{b:02x}' for r,g,b in bar_colors]
+
     fig, ax = plt.subplots(figsize=(10, 6))
     bars = ax.barh(feat_df['Feature'][::-1], feat_df['Importance'][::-1],
-                   color=purple_palette)
+                   color=bar_colors_hex[::-1])
     ax.set_xlabel("Feature Importance Score")
-    ax.set_title("Top 15 Most Important Features (XGBoost)", fontsize=13, fontweight='bold')
+    ax.set_title("Top 15 Most Important Features (XGBoost)",
+                 fontsize=13, fontweight='bold')
     for bar, val in zip(bars, feat_df['Importance'][::-1]):
-        ax.text(bar.get_width() + 0.001, bar.get_y() + bar.get_height()/2,
+        ax.text(bar.get_width()+0.001, bar.get_y()+bar.get_height()/2,
                 f'{val:.4f}', va='center', fontsize=8)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    plt.tight_layout()
-    st.pyplot(fig); plt.close()
+    ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
+    plt.tight_layout(); st.pyplot(fig); plt.close()
 
     st.markdown("---")
     st.markdown("### 📋 Full Feature Importance Table")
@@ -474,36 +437,17 @@ with tab4:
     full_feat_df.index += 1
     st.dataframe(full_feat_df, use_container_width=True)
 
-# ════════════════════════════════════════════════════════
-# TAB 5: HISTORY — Merah
-# ════════════════════════════════════════════════════════
+# ════ TAB 5: HISTORY ═════════════════════════════════════════
 with tab5:
-    st.markdown("""
-    <div style='background: linear-gradient(90deg,#e53935,#ef9a9a);
-    padding:20px 28px; border-radius:14px; margin-bottom:20px;'>
-    <h1 style='color:white; margin:0;'>📜 Prediction History</h1>
-    <p style='color:#ffebee; margin:6px 0 0;'>
-    Riwayat semua prediksi dalam sesi ini.</p>
-    </div>""", unsafe_allow_html=True)
+    header_banner("📜 Prediction History",
+                  "Riwayat semua prediksi dalam sesi ini.",
+                  PINK, DBLUE)
 
     if st.session_state.history:
         hist_df = pd.DataFrame(st.session_state.history)
-        avg_score = hist_df['Score'].mean()
-
         c1, c2 = st.columns(2)
-        for col, label, val, color in zip(
-            [c1, c2],
-            ["📊 Total Predictions", "🏆 Average Score"],
-            [str(len(hist_df)), f"{avg_score:.1f}"],
-            ["#e53935", "#fa7b17"]
-        ):
-            col.markdown(f"""
-            <div style='background:white; border-left:6px solid {color};
-            border-radius:10px; padding:16px; text-align:center;
-            box-shadow:0 2px 8px rgba(0,0,0,0.08);'>
-            <p style='color:{color}; font-size:13px; margin:0; font-weight:600;'>{label}</p>
-            <h2 style='color:#1a1a2e; margin:4px 0 0; font-size:28px;'>{val}</h2>
-            </div>""", unsafe_allow_html=True)
+        with c1: metric_card("📊 Total Predictions", str(len(hist_df)), BLUE)
+        with c2: metric_card("🏆 Average Score", f"{hist_df['Score'].mean():.1f}", PINK)
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.dataframe(hist_df, use_container_width=True)
@@ -514,8 +458,8 @@ with tab5:
                 del st.session_state.last_pred
             st.rerun()
     else:
-        st.markdown("""
-        <div style='background:#ffebee; border-left:5px solid #e53935;
+        st.markdown(f"""
+        <div style='background:{PINK}11; border-left:5px solid {PINK};
         border-radius:8px; padding:14px 18px;'>
         📭 <b>Belum ada riwayat prediksi. Lakukan prediksi terlebih dahulu.</b>
         </div>""", unsafe_allow_html=True)
