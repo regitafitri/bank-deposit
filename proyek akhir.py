@@ -2,15 +2,18 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+from xgboost import XGBClassifier
 
-# Load model pipeline
-model = joblib.load("bank_marketing_pipeline_xgb.pkl")
+# Load preprocessor dan model secara terpisah
+preprocessor = joblib.load("preprocessor.pkl")
+model = XGBClassifier()
+model.load_model("xgb_model.json")  # format native, bebas versi Python
 
 st.set_page_config(page_title="Bank Deposit Prediction", page_icon="🏦")
 st.title("🏦 Prediksi Deposit Bank")
 st.markdown("Masukkan data nasabah untuk memprediksi apakah akan membuka deposito.")
 
-# --- Input Form ---
+# Input Form
 st.sidebar.header("Input Data Nasabah")
 
 age = st.sidebar.slider("Age", 18, 95, 35)
@@ -31,9 +34,8 @@ contact = st.sidebar.selectbox("Contact", ['cellular','telephone','unknown'])
 month = st.sidebar.selectbox("Month", ['jan','feb','mar','apr','may','jun',
                                         'jul','aug','sep','oct','nov','dec'])
 poutcome = st.sidebar.selectbox("Poutcome", ['failure','other','success','unknown'])
-deposit = st.sidebar.selectbox("Deposit (target sebelumnya)", ['no','yes'])
+deposit = st.sidebar.selectbox("Deposit", ['no','yes'])
 
-# --- Predict ---
 if st.button("🔍 Prediksi"):
     input_data = pd.DataFrame([{
         'age': age, 'balance': balance, 'day': day,
@@ -44,9 +46,11 @@ if st.button("🔍 Prediksi"):
         'poutcome': poutcome, 'deposit': deposit
     }])
 
-    proba = model.predict_proba(input_data)[0][1]
-    pred = "✅ YA — Kemungkinan membuka deposito" if proba >= 0.4 else "❌ TIDAK — Kemungkinan tidak membuka deposito"
+    # Preprocess lalu predict
+    X_processed = preprocessor.transform(input_data)
+    proba = model.predict_proba(X_processed)[0][1]
 
+    pred = "✅ YA — Kemungkinan membuka deposito" if proba >= 0.4 else "❌ TIDAK — Kemungkinan tidak membuka deposito"
     st.subheader("Hasil Prediksi:")
     st.success(pred) if proba >= 0.4 else st.error(pred)
     st.metric("Probabilitas Deposito", f"{proba:.2%}")
